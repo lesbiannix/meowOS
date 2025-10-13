@@ -1,0 +1,22 @@
+[package]
+name = "meowOS"
+version = "0.1.0"
+authors = ["Jules"]
+edition = "2021"
+
+[dependencies]
+bootloader = { version = "0.9.23", features = ["map_physical_memory"] }
+volatile = "0.2.7"
+lazy_static = { version = "1.0", features = ["spin_no_std"] }
+spin = "0.5.2"
+x86_64 = "0.14"
+uart_16550 = "0.2"
+pic8259 = "0.10"
+pc-keyboard = "0.7"
+heapless = "0.7"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
