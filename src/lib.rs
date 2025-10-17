@@ -5,15 +5,14 @@
 
 extern crate alloc;
 
-pub mod vga_buffer;
-pub mod interrupts;
-pub mod gdt;
-pub mod memory;
 pub mod allocator;
-pub mod shell;
+pub mod gdt;
+pub mod interrupts;
 pub mod keyboard;
+pub mod memory;
+pub mod shell;
+pub mod vga_buffer;
 
-use core::panic::PanicInfo;
 use alloc::alloc::Layout;
 
 pub fn init() {

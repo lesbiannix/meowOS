@@ -1,7 +1,7 @@
-use crate::{print, println};
 use crate::keyboard;
-mod parser;
+use crate::{print, println};
 pub mod commands;
+mod parser;
 
 pub struct Shell {
     command_executor: parser::CommandExecutor,
@@ -37,7 +37,8 @@ impl Shell {
                     let line = core::str::from_utf8(&buffer[..*len]).unwrap();
                     return line;
                 }
-                '\x08' => { // backspace
+                '\x08' => {
+                    // backspace
                     if *len > 0 {
                         *len -= 1;
                         print!("\x08 \x08");

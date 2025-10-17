@@ -3,7 +3,7 @@ pub trait Command {
     fn execute(&self, args: &[&str]);
 }
 
-pub mod uname;
-pub mod help;
 pub mod clear;
 pub mod echo;
+pub mod help;
+pub mod uname;

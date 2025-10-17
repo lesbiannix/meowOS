@@ -1,10 +1,10 @@
-use crate::shell::commands::Command;
-use crate::shell::commands::uname::Uname;
-use crate::shell::commands::help::Help;
+use crate::println;
 use crate::shell::commands::clear::Clear;
 use crate::shell::commands::echo::Echo;
+use crate::shell::commands::help::Help;
+use crate::shell::commands::uname::Uname;
+use crate::shell::commands::Command;
 use heapless::Vec;
-use crate::println;
 
 pub struct CommandExecutor {
     commands: Vec<&'static dyn Command, 16>,

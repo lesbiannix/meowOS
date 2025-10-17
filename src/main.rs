@@ -1,87 +1,48 @@
 #![no_std]
 #![no_main]
-#![feature(custom_test_frameworks)]
-
-extern crate alloc;
 
 use core::panic::PanicInfo;
-use bootloader::{BootInfo, entry_point};
-use meowOS::{println, hlt_loop};
+use meow_os::{hlt_loop, println};
 
-entry_point!(kernel_main);
+/// Custom panic handler: prints panic info and halts the CPU.
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    println!("\n================== KERNEL PANIC ==================");
 
-fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use meowOS::memory::BootInfoFrameAllocator;
-    use x86_64::VirtAddr;
+    if let Some(location) = info.location() {
+        println!("Panic at {}:{}", location.file(), location.line());
+    } else {
+        println!("Panic location unknown.");
+    }
 
-    println!("Hello World{}", "!");
-    
-    // Initialize GDT and interrupts
-    println!("Initializing GDT and interrupts...");
-    meowOS::init();
-    println!("GDT and interrupts initialized!");
+    println!("Message: {}", info.message());
 
-    // Initialize memory management
-    println!("Initializing memory management...");
-    println!("Physical memory offset: {:#x}", boot_info.physical_memory_offset);
-    
-    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mut mapper = unsafe { 
-        println!("Creating mapper...");
-        meowOS::memory::init(phys_mem_offset) 
-    };
-    println!("Mapper created!");
-    
-    let mut frame_allocator = unsafe {
-        println!("Creating frame allocator...");
-        BootInfoFrameAllocator::init(&boot_info.memory_map)
-    };
-    println!("Frame allocator created!");
+    println!("================== KERNEL PANIC ==================\n");
 
-    // Initialize heap
-    println!("Initializing heap...");
-    match meowOS::allocator::init_heap(&mut mapper, &mut frame_allocator) {
-        Ok(_) => println!("Heap initialized successfully!"),
-        Err(e) => {
-            println!("Failed to initialize heap: {:?}", e);
-            println!("This likely means we ran out of frames or couldn't map pages");
-            hlt_loop();
+    #[cfg(feature = "allocator_debug")]
+    {
+        use meow_os::allocator::MAPPED_PAGES;
+        let mapped = MAPPED_PAGES.lock();
+        println!("Mapped pages (for debugging):");
+        for (page, frame) in mapped.iter() {
+            println!("Page {:>#018x} -> Frame {:>#018x}", page.as_u64(), frame);
         }
     }
 
-    println!("Memory management initialized!");
-
-    // Test heap allocation
-    println!("Testing heap allocation...");
-    use alloc::boxed::Box;
-    use alloc::vec::Vec;
-    use alloc::string::String;
-
-    let heap_value = Box::new(41);
-    println!("heap_value at {:p}", heap_value);
-
-    let mut vec = Vec::new();
-    for i in 0..100 {
-        vec.push(i);
-    }
-    println!("vec at {:p}, len: {}", vec.as_slice(), vec.len());
-
-    let reference_string = String::from("Hello from the heap!");
-    println!("{}", reference_string);
-
-    println!("All heap tests passed!");
-
-    // Start the shell
-    println!("Starting shell...");
-    let mut shell = meowOS::shell::Shell::new();
-    shell.run();
-
-    println!("It did not crash!");
-    hlt_loop();
+    hlt_loop()
 }
 
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-    hlt_loop();
+/// Entry point of the kernel
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    // Initialize GDT, IDT, PICs, and enable interrupts
+    meow_os::init();
+
+    // Initialize heap here if needed
+    // meow_os::allocator::init_heap(...);
+
+    println!("Kernel initialized successfully!");
+
+    hlt_loop()
 }
+

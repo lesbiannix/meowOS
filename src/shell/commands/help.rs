@@ -1,5 +1,5 @@
-use crate::shell::commands::Command;
 use crate::println;
+use crate::shell::commands::Command;
 
 pub struct Help;
 

@@ -1,5 +1,5 @@
-use crate::shell::commands::Command;
 use crate::println;
+use crate::shell::commands::Command;
 
 pub struct Uname;
 
@@ -13,6 +13,10 @@ impl Command for Uname {
             println!("Usage: uname -a");
             return;
         }
-        println!("meowOS 0.1.0 {} x86_64 GNU/Linux {}", env!("GIT_HASH"), env!("RUSTC_BUILD_DATE"));
+        println!(
+            "meowOS 0.1.0 {} x86_64 GNU/Linux {}",
+            env!("GIT_HASH"),
+            env!("RUSTC_BUILD_DATE")
+        );
     }
 }

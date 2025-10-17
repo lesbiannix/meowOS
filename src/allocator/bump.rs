@@ -1,8 +1,8 @@
-// src/allocator/bump.rs
-use super::Locked;
+use crate::allocator::{Locked, align_up};
 use alloc::alloc::{GlobalAlloc, Layout};
 use core::ptr;
 
+/// A simple bump allocator — allocates linearly, frees only when all allocations are dropped.
 pub struct BumpAllocator {
     heap_start: usize,
     heap_end: usize,
@@ -24,9 +24,7 @@ impl BumpAllocator {
     /// Initializes the bump allocator with the given heap bounds.
     ///
     /// # Safety
-    ///
-    /// This method is unsafe because the caller must ensure that the given
-    /// memory range is unused. Also, this method must be called only once.
+    /// Caller must ensure the memory range is valid and unused.
     pub unsafe fn init(&mut self, heap_start: usize, heap_size: usize) {
         self.heap_start = heap_start;
         self.heap_end = heap_start + heap_size;
@@ -38,7 +36,7 @@ unsafe impl GlobalAlloc for Locked<BumpAllocator> {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mut bump = self.lock();
 
-        let alloc_start = super::align_up(bump.next, layout.align());
+        let alloc_start = align_up(bump.next, layout.align());
         let alloc_end = match alloc_start.checked_add(layout.size()) {
             Some(end) => end,
             None => return ptr::null_mut(),
@@ -55,10 +53,11 @@ unsafe impl GlobalAlloc for Locked<BumpAllocator> {
 
     unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
         let mut bump = self.lock();
-        bump.allocations -= 1;
+        bump.allocations = bump.allocations.saturating_sub(1);
 
         if bump.allocations == 0 {
             bump.next = bump.heap_start;
         }
     }
 }
+

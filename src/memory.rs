@@ -1,11 +1,11 @@
 // src/memory.rs
+use bootloader::bootinfo::{MemoryMap, MemoryRegionType};
 use x86_64::{
     structures::paging::{
-        FrameAllocator, Mapper, Page, PageTable, PhysFrame, Size4KiB, OffsetPageTable,
+        FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB,
     },
     PhysAddr, VirtAddr,
 };
-use bootloader::bootinfo::{MemoryMap, MemoryRegionType};
 
 /// Initialize a new OffsetPageTable.
 ///
@@ -65,11 +65,9 @@ impl BootInfoFrameAllocator {
     fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
         // get usable regions from memory map
         let regions = self.memory_map.iter();
-        let usable_regions = regions
-            .filter(|r| r.region_type == MemoryRegionType::Usable);
+        let usable_regions = regions.filter(|r| r.region_type == MemoryRegionType::Usable);
         // map each region to its address range
-        let addr_ranges = usable_regions
-            .map(|r| r.range.start_addr()..r.range.end_addr());
+        let addr_ranges = usable_regions.map(|r| r.range.start_addr()..r.range.end_addr());
         // transform to an iterator of frame start addresses
         let frame_addresses = addr_ranges.flat_map(|r| r.step_by(4096));
         // create `PhysFrame` types from the start addresses
@@ -108,8 +106,8 @@ pub unsafe fn translate_addr(addr: VirtAddr, physical_memory_offset: VirtAddr) -
 /// the whole body of unsafe functions as an unsafe block. This function must
 /// only be reachable through `unsafe fn` from outside of this module.
 fn translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
-    use x86_64::structures::paging::page_table::FrameError;
     use x86_64::registers::control::Cr3;
+    use x86_64::structures::paging::page_table::FrameError;
 
     // read the active level 4 frame from the CR3 register
     let (level_4_table_frame, _) = Cr3::read();
