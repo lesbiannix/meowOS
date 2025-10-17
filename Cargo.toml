@@ -4,6 +4,13 @@ version = "0.1.0"
 authors = ["Jules"]
 edition = "2021"
 
+
+
+[lib]
+name = "meow_os"
+test = false
+bench = false
+
 [dependencies]
 bootloader = { version = "0.9.23", features = ["map_physical_memory"] }
 volatile = "0.2.7"
@@ -22,14 +29,18 @@ allocator_debug = []
 
 # The profile used for `cargo build`
 [profile.dev]
-panic = "abort"
 
 # The profile used for `cargo build --release`
 [profile.release]
-panic = "abort"
 
 [package.metadata.bootimage]
 test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio", "-display", "none"]
 test-success-exit-code = 33
-test-timeout = 300
+test-timeout = 10
+
+
+[[bin]]
+name = "meow_os"
+test = false
+bench = false
 
