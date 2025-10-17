@@ -19,17 +19,39 @@ pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 pub static MAPPED_PAGES: Mutex<alloc::vec::Vec<(VirtAddr, u64)>> =
     Mutex::new(alloc::vec::Vec::new());
 
+use x86_64::structures::paging::{mapper::MapToError, Mapper, Page, PageTableFlags};
+
 /// Initialize the heap and panic immediately if mapping fails
 pub fn init_heap(
-    _mapper: &mut impl FrameAllocator<Size4KiB>,
-    _frame_allocator: &mut impl FrameAllocator<Size4KiB>,
-) {
-    let heap_start = VirtAddr::new(HEAP_START as u64);
-    let _heap_end = heap_start + (HEAP_SIZE as u64 - 1);
+    mapper: &mut impl Mapper<Size4KiB>,
+    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
+) -> Result<(), MapToError<Size4KiB>> {
+    let page_range = {
+        let heap_start = VirtAddr::new(HEAP_START as u64);
+        let heap_end = heap_start + HEAP_SIZE - 1u64;
+        let heap_start_page = Page::containing_address(heap_start);
+        let heap_end_page = Page::containing_address(heap_end);
+        Page::range_inclusive(heap_start_page, heap_end_page)
+    };
 
-    // For simplicity, we leave page mapping logic here
-    // (Your previous page mapping code can remain)
-    // Mapped pages will be pushed to MAPPED_PAGES
+    for page in page_range {
+        let frame = frame_allocator
+            .allocate_frame()
+            .ok_or(MapToError::FrameAllocationFailed)?;
+        let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
+        unsafe {
+            mapper.map_to(page, frame, flags, frame_allocator)?.flush();
+        }
+
+        #[cfg(feature = "allocator_debug")]
+        MAPPED_PAGES.lock().push((page.start_address(), frame.start_address().as_u64()));
+    }
+
+    unsafe {
+        ALLOCATOR.lock().init(HEAP_START as *mut u8, HEAP_SIZE);
+    }
+
+    Ok(())
 }
 
 /// A wrapper around spin::Mutex to permit trait implementations.
