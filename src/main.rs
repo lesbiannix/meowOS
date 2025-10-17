@@ -5,6 +5,9 @@ use bootloader::{entry_point, BootInfo};
 use meow_os::{hlt_loop, println};
 
 entry_point!(kernel_main);
+use meow_os::memory;
+use x86_64::VirtAddr;
+
 
 use meow_os::memory;
 use x86_64::VirtAddr;
