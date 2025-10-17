@@ -3,22 +3,23 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    devenv.url = "github:cachix/devenv";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    devenv.url = "github:cachix/devenv";
   };
 
-  outputs = { self, nixpkgs, devenv, rust-overlay }:
+  outputs = { self, nixpkgs, rust-overlay, devenv }:
     let
-      system = "x86_64-linux";
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ rust-overlay.overlays.default ];
+      };
     in
     {
-      devShells.${system}.default = devenv.lib.mkShell {
-        modules = [
-          ({ pkgs, ... }: {
-            # This is the main module where you can configure your shell
-            packages = [ pkgs.qemu-system-x86 ];
-            languages.rust.enable = true;
-          })
+      devShells.x86_64-linux.default = devenv.lib.mkShell {
+        inherit pkgs;
+        packages = [
+          pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml
+          pkgs.qemu-system-x86
         ];
       };
     };

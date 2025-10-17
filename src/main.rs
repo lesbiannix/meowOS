@@ -5,9 +5,14 @@ use bootloader::{entry_point, BootInfo};
 use meow_os::{hlt_loop, println};
 
 entry_point!(kernel_main);
+use meow_os::memory;
+use x86_64::VirtAddr;
+
 
 use meow_os::memory;
 use x86_64::VirtAddr;
+
+use core::panic::PanicInfo;
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // Initialize GDT, IDT, PICs, and enable interrupts
@@ -27,3 +32,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     hlt_loop()
 }
 
+#[cfg(not(test))]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
+    hlt_loop();
+}
