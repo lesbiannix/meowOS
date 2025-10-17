@@ -3,8 +3,8 @@ use x86_64::instructions::port::Port;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum QemuExitCode {
-    Success = 0x10,
-    Failed = 0x11,
+    Success = 0x43, // (33 << 1) | 1
+    Failed = 0x3,   // (1 << 1) | 1
 }
 
 pub fn exit_qemu(exit_code: QemuExitCode) {
